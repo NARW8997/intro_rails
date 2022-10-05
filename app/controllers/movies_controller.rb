@@ -12,11 +12,39 @@ class MoviesController < ApplicationController
 
     if params[:ratings].nil?
       @ratings_to_show = Movie.all_ratings
+      @ratings_to_pass = {'G':'1', 'PG':'1', 'PG-13':'1','R':'1'}
     else
       @ratings_to_show = params[:ratings].keys
+      @ratings_to_pass = params[:ratings]
     end
 
-    @movies = Movie.with_ratings(@ratings_to_show)
+    # @movies = Movie.with_ratings(@ratings_to_show)
+
+
+    if params[:filter_movies].nil?
+      @current_select = ''
+    elsif params[:filter_movies] == 'movie_title'
+      @current_select = 'movie_title'
+    elsif params[:filter_movies] == 'release_date'
+      @current_select = 'release_data'
+    else
+      @current_select = ''
+    end
+
+    if @current_select == 'movie_title'
+      @movie_title_class = 'hilite bg-warning'
+      @movie_release_date_class = ''
+      @movies = Movie.with_ratings(@ratings_to_pass.keys).order(:title)
+    elsif @current_select == 'release_data'
+      @movie_title_class = ''
+      @movie_release_date_class = 'hilite bg-warning'
+      @movies = Movie.with_ratings(@ratings_to_pass.keys).order(:release_date)
+    else
+      @movies = Movie.with_ratings(@ratings_to_show)
+    end
+
+    # raise params.inspect
+
 
   end
 

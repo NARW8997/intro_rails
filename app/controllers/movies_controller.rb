@@ -10,23 +10,28 @@ class MoviesController < ApplicationController
     # @movies = Movie.all
     @all_ratings = Movie.all_ratings
 
-    if params[:ratings].nil?
-      @ratings_to_show = Movie.all_ratings
-      @ratings_to_pass = {'G':'1', 'PG':'1', 'PG-13':'1','R':'1'}
-    else
+    need_redirect = false
+    if !params[:ratings].nil?
       @ratings_to_show = params[:ratings].keys
       @ratings_to_pass = params[:ratings]
+      session[:ratings] = params[:ratings]
+    elsif !session[:ratings].nil?
+      @ratings_to_show = session[:ratings].keys
+      @ratings_to_pass = session[:ratings]
+      need_redirect = true
+    else
+      @ratings_to_show = Movie.all_ratings
+      @ratings_to_pass = {'G':'1', 'PG':'1', 'PG-13':'1','R':'1'}
     end
 
-    # @movies = Movie.with_ratings(@ratings_to_show)
 
+    if !params[:filter_movies].nil?
 
-    if params[:filter_movies].nil?
-      @current_select = ''
-    elsif params[:filter_movies] == 'movie_title'
-      @current_select = 'movie_title'
-    elsif params[:filter_movies] == 'release_date'
-      @current_select = 'release_data'
+      @current_select = params[:filter_movies]
+      session[:filter_movies] = params[:filter_movies]
+    elsif !session[:filter_movies].nil?
+      @current_select = session[:filter_movies]
+      need_redirect = true
     else
       @current_select = ''
     end
@@ -34,18 +39,20 @@ class MoviesController < ApplicationController
     if @current_select == 'movie_title'
       @movie_title_class = 'hilite bg-warning'
       @movie_release_date_class = ''
-      @movies = Movie.with_ratings(@ratings_to_pass.keys).order(:title)
-    elsif @current_select == 'release_data'
+      @movies = Movie.with_ratings(@ratings_to_pass.keys).order(:title).distinct
+    elsif @current_select == "release_date"
       @movie_title_class = ''
       @movie_release_date_class = 'hilite bg-warning'
-      @movies = Movie.with_ratings(@ratings_to_pass.keys).order(:release_date)
+      @movies = Movie.with_ratings(@ratings_to_pass.keys).order(:release_date).distinct
     else
-      @movies = Movie.with_ratings(@ratings_to_show)
+      # @movie_title_class = ''
+      # @movie_release_date_class = ''
+      @movies = Movie.with_ratings(@ratings_to_show).distinct
     end
 
-    # raise params.inspect
-
-
+    if need_redirect
+      redirect_to movies_path(:filter_movies => @current_select, :ratings => @ratings_to_pass)
+    end
   end
 
   def new
